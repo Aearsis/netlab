@@ -1,0 +1,39 @@
+function netlab_node_start()
+{
+	mkdir $dir -p
+	cd $dir
+	ip netns exec $ns bash ../common.start $N
+	cd ..
+}
+
+function netlab_node_command()
+{
+	cd $dir
+	ip netns exec $ns ../common.command $*
+	cd ..
+}
+
+function netlab_node_stop()
+{
+	netlab_node_command down
+	rm -rf $dir
+}
+
+function netlab_netns()
+{
+	echo "netlab-$1"
+}
+
+function netlab_each()
+{
+	CMD=$1
+	shift
+	for N in $NODES
+	do
+		ns=`netlab_netns $N`
+		dir=node-$N
+		echo -n "[$N] "
+		$CMD $N $*
+	done
+	echo
+}
