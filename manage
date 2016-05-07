@@ -88,8 +88,8 @@ dump() {
 }
 
 restart() {
-	stop
-	start
+	stop $*
+	start $*
 }
 
 $*
