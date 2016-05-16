@@ -1,0 +1,1 @@
+PS1='[$NETLAB_NODE] # '
