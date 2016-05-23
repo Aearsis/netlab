@@ -1,0 +1,38 @@
+NETLAB_CFG="$NETLAB_BASE/cfg"
+
+netlab_node r1
+netlab_node r1n1
+netlab_node r1n2
+netlab_node r2
+netlab_node r2n1
+netlab_node r2n2
+
+if_dummy r1   d1 10.1.0
+if_dummy r1n1 d1 10.1.1
+if_dummy r1n2 d1 10.1.2
+if_dummy r2   d1 10.2.0
+if_dummy r2n1 d1 10.2.1
+if_dummy r2n2 d1 10.2.2
+
+if_veth r1 r2n1 10.10.1
+if_veth r1 r2n2 10.10.2
+
+if_bridge    br0 10.3.0.1
+if_plug r1   br0 10.3.0.2
+if_plug r1n1 br0 10.3.0.3
+if_plug r1n2 br0 10.3.0.4
+
+if_bridge    br1 10.3.1.1
+if_plug r2n1 br1 10.3.1.3
+if_plug r2n2 br1 10.3.1.4
+if_plug r2   br1 10.3.1.2
+
+nl_netns send
+if_veth send r1n1 10.4.0
+nl_route send default via 10.4.0.2
+nl_route send 224.0.0.0/4 dev veth-r1n1
+
+nl_netns recv
+if_veth recv r2 10.4.1
+nl_route recv default via 10.4.1.2
+nl_route recv 224.0.0.0/4 dev veth-r2

@@ -1,0 +1,18 @@
+#!/usr/bin/bash
+
+NETLAB_BASE=`dirname $BASH_SOURCE`
+
+(
+    cd $NETLAB_BASE
+
+    NETLAB_BASE=`pwd`
+    NETLAB_BIRD="$NETLAB_BASE/.."
+
+    . lib/netlab_network
+    . lib/netlab_utils
+    . lib/netlab_commands
+
+    [[ $# -eq 0 ]] && netlab_shell
+    [[ $0 != $BASH_SOURCE ]] && netlab_shell
+    netlab_invoke $*
+)

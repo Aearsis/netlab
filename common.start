@@ -1,5 +1,0 @@
-ln -sf ../../bird bird
-ln -sf ../../birdc birdc
-ln -sf ../cfg/bird_$1.conf bird.conf
-
-./bird -c bird.conf -s bird.sock &

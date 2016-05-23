@@ -1,0 +1,80 @@
+function nl_netns()
+{
+	ns=`netlab_netns $1`
+	netlab_on_up   ip netns add $ns
+	netlab_on_down ip netns del $ns
+}
+
+function netlab_ip()
+{
+	ns=`netlab_netns $1`
+	shift
+	ip -n $ns $*
+}
+
+function nl_route()
+{
+	N=$1
+	shift
+
+	netlab_on_up netlab_ip $N route add $*
+}
+
+function if_dummy()
+{
+	ns=`netlab_netns $1`
+	netlab_on_up ip link add name $2 netns $ns type dummy
+
+	netlab_on_up netlab_ip $1 addr add ${3}.1/24 dev $2
+	netlab_on_up netlab_ip $1 link set $2 up
+}
+
+function if_bridge()
+{
+	N=$1
+	name=$1
+	addr=$2
+
+	nl_netns $N
+	netlab_on_up netlab_ip $N link add name $name type bridge
+
+	netlab_on_up netlab_ip $N addr add ${addr}/24 dev $name
+	netlab_on_up netlab_ip $N link set $name up
+
+	netlab_on_up ip netns exec `netlab_netns $N` bash -c "echo 0 > /sys/devices/virtual/net/$name/bridge/multicast_snooping" >/dev/null
+}
+
+function if_veth()
+{
+	ns1=`netlab_netns $1`
+	ns2=`netlab_netns $2`
+	name1=veth-$2
+	name2=veth-$1
+	addr=$3
+
+	netlab_on_up ip link add name $name1 netns $ns1 type veth peer name $name2 netns $ns2
+
+	netlab_on_up ip netns exec $ns1 ip link set $name1 up
+	netlab_on_up ip netns exec $ns2 ip link set $name2 up
+	netlab_on_up ip netns exec $ns1 ip addr add ${addr}.1/24 dev $name1
+	netlab_on_up ip netns exec $ns2 ip addr add ${addr}.2/24 dev $name2
+}
+
+
+function if_plug()
+{
+	N=$1
+	br=$2
+	addr=$3
+	nsn=`netlab_netns $N`
+	nsbr=`netlab_netns $br`
+
+	netlab_on_up ip link add name veth-$N netns $nsbr type veth peer name veth-$br netns $nsn
+
+	netlab_on_up netlab_ip $N addr add ${addr}/24 dev veth-$br
+	netlab_on_up netlab_ip $N  link set veth-$br up
+
+	netlab_on_up netlab_ip $br link set veth-$N master $br
+	netlab_on_up netlab_ip $br link set veth-$N up
+	netlab_on_up netlab_ip $br link set $br up
+}

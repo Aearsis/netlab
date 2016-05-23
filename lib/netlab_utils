@@ -1,0 +1,82 @@
+netlab_node_start()
+{
+	mkdir $dir -p
+	ln -sf $NETLAB_BIRD/bird $dir/bird
+	ln -sf $NETLAB_BIRD/birdc $dir/birdc
+	ln -sf $NETLAB_CFG/bird_$1.conf $dir/bird.conf
+	cd $dir
+	ip netns exec $ns ./bird -c bird.conf -s socket -D debug-log &
+}
+
+netlab_node_command()
+{
+	( cd $dir && [ -S socket ] && ./birdc -s socket "$*" || echo "(socket closed)" )
+}
+
+netlab_node_stop()
+{
+	netlab_node_command down
+	rm -rf $dir
+}
+
+netlab_netns()
+{
+	echo "netlab-$1"
+}
+
+NETLAB_NODES=""
+netlab_node()
+{
+	NETLAB_NODES="$NETLAB_NODES $1"
+	nl_netns $1
+}
+
+netlab_env()
+{
+	ns=`netlab_netns $1`
+	dir=$NETLAB_BASE/nodes/$1
+}
+
+netlab_each()
+{
+	NODES=${NODES:-$NETLAB_NODES}
+	CMD=$1
+	shift
+	for N in $NODES
+	do
+		netlab_env $N
+		echo -n "[$N] "
+		( $CMD $N $* )
+	done
+	echo
+}
+
+netlab_on_up() { :; }
+netlab_on_down() { :; }
+
+netlab_init_network()
+{
+	NETLAB_NODES=""
+	NETLAB_NETWORK=${NETLAB_NETWORK:-default}
+	. "networks/$NETLAB_NETWORK"
+	netlab_on_up() { :; }
+	netlab_on_down() { :; }
+}
+
+netlab_net_down()
+{
+	netlab_on_down() { $*; }
+	netlab_init_network
+}
+
+netlab_net_up()
+{
+	netlab_on_up() { $*; }
+	netlab_init_network
+}
+
+netlab_shell()
+{
+	echo "Welcome to the netlab shell! To get help, write 'help'."
+	exec bash --rcfile $NETLAB_BASE/lib/netlab.bashrc
+}

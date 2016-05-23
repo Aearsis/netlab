@@ -1,0 +1,104 @@
+#!/bin/bash
+
+net_up() {
+	NETLAB_NETWORK=${1:-default}
+	netlab_net_up
+}
+
+net_down() {
+	NETLAB_NETWORK=${1:-default}
+	netlab_net_down
+}
+
+start() {
+	NODES=${*:-$NETLAB_NODES}
+	netlab_each netlab_node_start
+}
+
+stop() {
+	NODES=${*:-$NETLAB_NODES}
+	netlab_each netlab_node_stop
+	rm -rf $NETLAB_BASE/nodes
+}
+
+command_all() {
+	netlab_each netlab_node_command $*
+}
+
+log() {
+	[[ ! $# -eq 1 ]] && echo "Usage: log <node>" && return
+	netlab_env $1
+	less $dir/log
+}
+
+debug() {
+	[[ ! $# -eq 1 ]] && echo "Usage: debug <node>" && return
+	netlab_env $1
+	less $dir/debug-log
+}
+
+client() {
+	[[ $# -lt 1 ]] && echo "Usage: client <node> [command]" && return
+	netlab_env $1
+	shift
+	cd $dir
+	./birdc -s ./socket $*
+}
+
+dump() {
+	[[ ! $# -eq 1 ]] && echo "Usage: dump <node>" && return
+	client $1 dump protocols
+}
+
+shell() {
+	[[ $# -lt 1 ]] && echo "Usage: shell <node> [command]" && return
+	export NETLAB_NODE=$1
+	shift
+	ns=`netlab_netns $NETLAB_NODE`
+	ip netns exec $ns bash --rcfile $NETLAB_BASE/lib/node.bashrc
+}
+
+help() {
+	cat <<AMEN
+You can use following commands:
+help			Show this help once again
+net_up			Brings the network virtualization up
+start [nodes...]	Start the nodes
+
+shell  <node> [cmd]	Executes a shell command in the node's environment, or
+			opens the shell
+client <node> [cmd]	Sends the node a command or opens an interactive client
+dump   <node>		Sends the node a "dump protocols" command
+debug / log <node>	Shows the log for node
+
+command_all <command>	Sends all nodes a command
+
+stop [nodes...]		Stop the nodes
+net_down		Brings the network virtualization down
+
+Netlab can be run either by invoking a command:
+	netlab [command] [...]
+or by entering the netlab shell by sourcing it:
+	source netlab
+
+Change the network scheme by changing the variable NETLAB_NETWORK. Do not do it
+while other network is up.
+AMEN
+}
+
+restart() {
+	stop $*
+	start $*
+}
+
+netlab_invoke() {
+	case $1 in
+		net_up|net_down)
+			$*
+			;;
+		*)
+			netlab_init_network
+			( $* )
+			;;
+	esac
+}
