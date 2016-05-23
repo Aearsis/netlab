@@ -52,10 +52,10 @@ dump() {
 
 shell() {
 	[[ $# -lt 1 ]] && echo "Usage: shell <node> [command]" && return
+	netlab_env $1
 	export NETLAB_NODE=$1
 	shift
-	ns=`netlab_netns $NETLAB_NODE`
-	ip netns exec $ns bash --rcfile $NETLAB_BASE/lib/node.bashrc
+	cd $dir && ip netns exec $ns bash --rcfile $NETLAB_BASE/lib/node.bashrc
 }
 
 help() {

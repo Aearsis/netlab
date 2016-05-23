@@ -1,1 +1,1 @@
-PS1='[$NETLAB_NODE] # '
+PS1='[netlab $NETLAB_NODE] # '
