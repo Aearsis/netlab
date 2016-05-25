@@ -55,7 +55,10 @@ shell() {
 	netlab_env $1
 	export NETLAB_NODE=$1
 	shift
-	cd $dir && ip netns exec $ns bash --rcfile $NETLAB_BASE/lib/node.bashrc
+	(
+		[[ -d "$dir" ]] && cd $dir
+		ip netns exec $ns bash --rcfile $NETLAB_BASE/lib/node.bashrc
+	)
 }
 
 help() {
