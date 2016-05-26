@@ -18,7 +18,6 @@ start() {
 stop() {
 	NODES=${*:-$NETLAB_NODES}
 	netlab_each netlab_node_stop
-	rm -rf $NETLAB_BASE/nodes
 }
 
 command_all() {
